@@ -1,0 +1,108 @@
+/*
+  Communicate with BME280s with different I2C addresses
+  Nathan Seidle @ SparkFun Electronics
+  March 23, 2015
+
+  Feel like supporting our work? Buy a board from SparkFun!
+  https://www.sparkfun.com/products/14348 - Qwiic Combo Board
+  https://www.sparkfun.com/products/13676 - BME280 Breakout Board
+
+  This example shows how to connect two sensors on the same I2C bus.
+
+  The BME280 has two I2C addresses: 0x77 (jumper open) or 0x76 (jumper closed)
+
+  Hardware connections:
+  BME280 -> Arduino
+  GND -> GND
+  3.3 -> 3.3
+  SDA -> A4
+  SCL -> A5
+*/
+#define THINGER_SERIAL_DEBUG //Habilita la depuracion en serie
+#define _DISABLE_TLS_ //TLS needs to be disabled if using ESP32 (not sure why, this is a known bug)// leido en un foro de arduino IDE y ahora funciona
+#define TINY_GSM_MODEM_SIM800 //Usamos el modem correcto Nota: importante que esto se defina antes de hacer uso de las librerías
+
+#include <TinyGsmClient.h> //bibliotecas para comunicacion
+#include <ThingerTinyGSM.h>
+#include <SPI.h>//contiene las funciones necesarias para controlar el hardware integrado de SPI.
+#include <SimpleTimer.h>//biblioteca para el timer https://playground.arduino.cc/Code/SimpleTimer/
+#include <ThingerESP32.h> //Configuracion del ESP32
+#include <SparkFunBME280.h>
+#include <Wire.h>
+#include "SparkFunBME280.h"
+
+
+#define APN_NAME "kolbi3g" //Cargamos los datos del APN
+#define APN_USER ""
+#define APN_PSWD ""
+
+//Thinger credentials
+#define USERNAME "JOQ"    //Thinger Account User Name
+#define DEVICE_ID "BME"    //Thinger device IC
+#define DEVICE_CREDENTIAL "Zx9sUWVQVGl#Ds9w" //Thinger device credential (password)
+ThingerTinyGSM thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL, Serial2);
+
+
+#define Soil_PIN 25
+#define RXD1 27 //Segun la guia de pines del fabricante estos son los pines TX Y RX/ necesario invertirlos para que funcione
+#define TXD1 26
+
+
+BME280 mySensorA; //Uses default I2C address 0x77
+BME280 mySensorB; //Uses I2C address 0x76 (jumper closed)
+
+void setup()
+{
+  Wire.begin();
+  Serial.begin(115200);
+  Serial.println("Example showing alternate I2C addresses");
+  delay(10);
+  
+  pinMode(23, OUTPUT); //ENCENDER EL ESP32, ver el Pin Diagram del fabricante
+  digitalWrite(23, LOW);
+  delay(1000);
+  digitalWrite(23, HIGH);
+
+  Serial2.begin(115200, SERIAL_8N1, TXD1, RXD1);//Es necesario invertir los pines para una correcta comunicacion UART
+  delay(6000);
+  Serial.println(" Starting Thinger GSM conection o inicializando moden");//inicializo
+  delay(1000);
+
+  
+
+  mySensorA.setI2CAddress(0x77); //The default for the SparkFun Environmental Combo board is 0x77 (jumper open).
+  //If you close the jumper it is 0x76
+  //The I2C address must be set before .begin() otherwise the cal values will fail to load.
+
+  if(mySensorA.beginI2C() == false) Serial.println("Sensor A connect failed");
+
+  mySensorB.setI2CAddress(0x76); //Connect to a second sensor
+  if(mySensorB.beginI2C() == false) Serial.println("Sensor B connect failed");
+}
+
+void loop()
+{
+  Serial.print("HumidityA: ");
+  Serial.print(mySensorA.readFloatHumidity(), 0);
+
+  Serial.print(" PressureA: ");
+  Serial.print(mySensorA.readFloatPressure(), 0);
+
+  Serial.print(" TempA: ");
+  //Serial.print(mySensorA.readTempC(), 2);
+  Serial.print(mySensorA.readTempF(), 2);
+
+  Serial.print(" HumidityB: ");
+  Serial.print(mySensorB.readFloatHumidity(), 0);
+
+  Serial.print(" PressureB: ");
+  Serial.print(mySensorB.readFloatPressure(), 0);
+
+  Serial.print(" TempB: ");
+  //Serial.print(mySensorB.readTempC(), 2);
+  Serial.print(mySensorB.readTempF(), 2);
+
+  Serial.println();
+
+  delay(50);
+}
