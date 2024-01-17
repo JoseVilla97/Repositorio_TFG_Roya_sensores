@@ -26,7 +26,11 @@
 #include <RTClib.h>  // incluye libreria para el manejo del modulo DS3231
 #include <Simpletimer.h>
 
-#define USERNAME "JOQ"    //Thinger Account User Name FQO
+//#define USERNAME "JOQ"    //Thinger Account User Name FQO
+//#define DEVICE_ID "BME1"    //Thinger device IC
+//#define DEVICE_CREDENTIAL "9SN0XcbFqtAVZ0oJ" //Thinger device credential (password)
+
+#define USERNAME "FQO"    //Thinger Account User Name FQO
 #define DEVICE_ID "BME1"    //Thinger device IC
 #define DEVICE_CREDENTIAL "9SN0XcbFqtAVZ0oJ" //Thinger device credential (password)
 
@@ -92,7 +96,7 @@ int readCount = 0;// conteo de las veces que envia datos al thinger.io
 void Sensor();//FUNCIÓN PARA LA LECTURA DE LOS SENSORES
 void deepSleep(); //FUNCIÓN PARA MANDAR A DOMIR LA PLACA
 void print_porque_desperte(); //FUNCIÓN QUE IMPRIME AL RAZÓN POR LA QUE SE DESPIERTA, QUE DEBE SER POR EMDIO DE UNA INTERRUPCIÓN EXTERNA DEL DS3231
-
+bool enviarDatos = false;
 
 void setup() {
   
@@ -148,8 +152,8 @@ void setup() {
 
   //thing["millis"] >> outputValue(millis());
   thing["Bme"] >> [](pson & out) { //pson es un objeto especial proporcionado por la biblioteca Thinger.h para construir la estructura de datos
-    out["Humidity (%)"] = humidity_SET;
-    out["Temperature (°C)"] = temperature_SET;
+    out["Humidity (%)"] = round_to_dp(humidity_SET, 2);
+    out["Temperature (°C)"] = round_to_dp(temperature_SET, 2);
     out["Dewpoint"] = DewPoint;
     out["Pressure (Pa)"] = pressure;
     out["Altitude (m)"] = altitud;
@@ -205,17 +209,16 @@ void setup() {
 
 
 void loop() {
-  timer1.run(60000); //el tiempo en el que va a hacer cada lectura, si es mayor a 60s, refleja un 0 en el cubo de datos
   thing.handle();//Maneja la conexión con Thinger.io.
+  timer1.run(50000); //el tiempo en el que va a hacer cada lectura, si es mayor a 60s, refleja un 0 en el cubo de datos
+    // Verifica si es el momento de enviar datos
+  if (enviarDatos) {
+    thing.stream("Bme"); // Utiliza tu lógica para determinar cuándo enviar los datos
+    //thing.write_bucket("Station1", "Bme");
+    enviarDatos = false; // Resetea la variable para que no se envíen datos continuamente
+  }
   
-  
-    // use your own logic here to determine when to stream/record the resource.
-//  if(requires_recording){
-//      thing.stream("BME");
-//  }
-  //thing.write_bucket("Station1", "Bme");
-  
-  if (readCount >= 3) { //sabemos que 12*5 =60s, timpo para subir a la plataforma
+  if (readCount > 3) { //sabemos que 12*5 =60s, timpo para subir a la plataforma
     deepSleep();  // Llama a deepSleep después de un cierto número de ciclos de la función void sensor
   }
 
@@ -299,6 +302,11 @@ void Sensor() { // Función que se ejecuta periodicamente
 
 }
 
+float round_to_dp( float in_value, int decimal_place ) {
+  float multiplier = powf( 10.0f, decimal_place );
+  in_value = roundf( in_value * multiplier ) / multiplier;
+  return in_value;
+}
 
 void deepSleep() {
   DateTime now = rtc.now(); // Get the current time
