@@ -9,6 +9,7 @@
 
 
 
+
 /*Proyeccto monitoreo de condiciones ambientales
   Jose Villarreal
   Universidad de Costa Rica*/
@@ -44,6 +45,7 @@
 #include "esp_system.h"
 
 //________________________________Thinger.io necesitamos un usuario,nombre de dispositivo y credencial ⤵______________________________
+
 #define USERNAME "JOQ"    //Thinger Account User Name FQO
 #define DEVICE_ID "BME1"    //Thinger device IC
 #define DEVICE_CREDENTIAL "9SN0XcbFqtAVZ0oJ" //Thinger device credential (password)
@@ -55,15 +57,18 @@
 
 
 //________________________________Cargamos los datos del APN, en este caso ya desactivamos las contraseñas de la SIM ⤵______________________________
+
 #define APN_NAME "kolbi3g"
 #define APN_USER ""
 #define APN_PSWD ""
 
 //________________________________Serial2: Este parámetro indica la interfaz serial que se utilizará para la comunicación con el módulo GSM_________________
+
 ThingerTinyGSM thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL, Serial2);
 
 
 //________________________________Definimos los pines segúnn el fabricante__________________________________
+
 #define MODEM_RST            5
 #define MODEM_RST            5
 #define MODEM_PWRKEY          4
@@ -152,12 +157,10 @@ String dataMessage;//Variable que almacena
 #define uS_TO_S_FACTOR 1000000ULL  /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP  1200    /* Time ESP32 will go to sleep  (in seconds) */ //unos 20min
 
-
 //________________________________Variables asocicadas al watchdog ⤵______________________________
 
 const int button = 14;             //gpio to use to trigger delay //que se usa para simular un bloqueo al presionar un botón
 const int wdtTimeout = 60000;     //time in ms to trigger the watchdog// tiempo en el que se quedó pegado por unos 60s debido a que pude tardar el modulo en capturar señal
-const int wdtTimeout2 = wdtTimeout / 60;
 hw_timer_t *timer = NULL;         //es un puntero a una estructura de tipo hw_timer_t, que se usará para manejar el temporizador de hardware.
 long loopTime;
 
@@ -178,10 +181,9 @@ float leerVoltaje();
 
 
 
-
-
+//________________________________Inicializar puerto serie ⤵______________________________
+  
 void setup() {
-  //________________________________Inicializar puerto serie ⤵______________________________
   Serial.begin(115200);
   Serial.println("");
 
@@ -284,7 +286,6 @@ void setup() {
   print_porque_desperte();
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
   Serial.println("Setup ESP32 to sleep for every " + String(TIME_TO_SLEEP) + " Seconds");
-  Serial.println("Setup ESP32 to sleep for every " + String(wdtTimeout2) + " minutes");
   Serial.println("");
 
   //________________________________OBTENEMOS LA HORA Y ASIGNAMOS LOS VALORES A UNA VARIABLE PARA ENVIAR A LA SD ⤵__________________________________________________________
@@ -650,6 +651,9 @@ void appendFile(fs::FS &fs, const char * path, const char * message) {
   }
   file.close();
 }
+
+
+
 
 
 
